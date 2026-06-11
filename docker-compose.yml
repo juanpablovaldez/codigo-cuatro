@@ -10,64 +10,46 @@ services:
     networks:
       - tfi_network
 
-  api-gateway:
+  gateway:
     build:
-      context: ./services/api-gateway
+      context: ./gateway
       dockerfile: Dockerfile
-    container_name: tfi_api_gateway
+    container_name: tfi_gateway
     ports:
-      - "3000:3000"
+      - "${GATEWAY_PORT:-3000}:3000"
     environment:
       - PORT=3000
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - INVENTORY_SERVICE_URL=http://inventory-service:3004
-      - ORDER_SERVICE_URL=http://order-service:3005
+      - PRODUCTS_SERVICE_HOST=products-service
+      - PRODUCTS_SERVICE_PORT=3003
+      - ORDERS_SERVICE_HOST=orders-service
+      - ORDERS_SERVICE_PORT=3005
     depends_on:
-      - auth-service
-      - inventory-service
-      - order-service
+      - products-service
+      - orders-service
     networks:
       - tfi_network
 
-  auth-service:
+  products-service:
     build:
-      context: ./services/auth-service
+      context: ./services/products
       dockerfile: Dockerfile
-    container_name: tfi_auth_service
-    ports:
-      - "3001:3001"
+    container_name: tfi_products_service
+    expose:
+      - "3003"
     environment:
-      - PORT=3001
-    depends_on:
-      - rabbitmq
+      - PORT=3003
     networks:
       - tfi_network
 
-  inventory-service:
+  orders-service:
     build:
-      context: ./services/inventory-service
+      context: ./services/orders
       dockerfile: Dockerfile
-    container_name: tfi_inventory_service
-    ports:
-      - "3004:3004"
-    environment:
-      - PORT=3004
-    depends_on:
-      - rabbitmq
-    networks:
-      - tfi_network
-
-  order-service:
-    build:
-      context: ./services/order-service
-      dockerfile: Dockerfile
-    container_name: tfi_order_service
-    ports:
-      - "3005:3005"
+    container_name: tfi_orders_service
+    expose:
+      - "3005"
     environment:
       - PORT=3005
-    depends_on:
-      - rabbitmq
     networks:
       - tfi_network
 
