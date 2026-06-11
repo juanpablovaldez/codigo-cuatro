@@ -1,34 +1,34 @@
-# Microservices Skeleton Implementation Report
+# Reporte de Implementación del Esqueleto de Microservicios
 
-This report documents the implementation of the three microservices, API Gateway proxy, message broker stubs, Docker configurations, and the step-by-step git commits made to build the project.
+Este reporte documenta la implementación de los tres microservicios, el proxy inverso API Gateway, los stubs del Message Broker, las configuraciones de Docker y el historial de commits realizados paso a paso para construir el esqueleto del proyecto.
 
 ---
 
-## 1. Directory Structure
+## 1. Estructura de Carpetas
 
-The following folder structure was created under the `services/` directory and workspace root:
+La siguiente estructura de carpetas fue creada dentro del directorio `services/` y en la raíz del repositorio:
 
 ```txt
 tfi/
-├── docker-compose.yml                      # Root orchestrator
+├── docker-compose.yml                      # Orquestador raíz
 ├── docs/
-│   └── 00-reporte-esqueleto.md             # This report
+│   └── 00-reporte-esqueleto.md             # Este reporte
 └── services/
-    ├── api-gateway/                        # Express reverse proxy stub
+    ├── api-gateway/                        # Proxy inverso Express (stub)
     │   ├── src/
     │   │   └── main.ts
     │   ├── Dockerfile
     │   ├── package.json
     │   └── tsconfig.json
-    ├── auth-service/                       # Auth microservice stub (Port 3001)
+    ├── auth-service/                       # Microservicio de autenticación (Puerto 3001)
     │   ├── src/
     │   │   ├── broker/
-    │   │   │   └── broker.client.ts        # Mock broker publisher/subscriber
+    │   │   │   └── broker.client.ts        # Mock publicador/suscriptor del broker
     │   │   └── main.ts
     │   ├── Dockerfile
     │   ├── package.json
     │   └── tsconfig.json
-    ├── inventory-service/                  # Inventory microservice stub (Port 3004)
+    ├── inventory-service/                  # Microservicio de inventario (Puerto 3004)
     │   ├── src/
     │   │   ├── broker/
     │   │   │   └── broker.client.ts
@@ -36,7 +36,7 @@ tfi/
     │   ├── Dockerfile
     │   ├── package.json
     │   └── tsconfig.json
-    └── order-service/                      # Orders microservice stub (Port 3005)
+    └── order-service/                      # Microservicio de pedidos (Puerto 3005)
         ├── src/
         │   ├── broker/
         │   │   └── broker.client.ts
@@ -48,9 +48,9 @@ tfi/
 
 ---
 
-## 2. Commit History
+## 2. Historial de Commits
 
-The project build was divided into incremental commits to maintain a clean Git history representing each phase of setup. Below is the commit log showing our additions:
+La construcción del proyecto fue dividida en commits incrementales para mantener un historial de Git limpio, donde cada commit representa una fase bien definida de la configuración inicial:
 
 ```txt
 * 7fb0d20 chore: add docker-compose and base Dockerfiles
@@ -61,23 +61,23 @@ The project build was divided into incremental commits to maintain a clean Git h
 
 ---
 
-## 3. Commit Breakdown
+## 3. Descripción de cada Commit
 
 ### Commit 1: `feat: initialize skeletons for auth, order, and inventory services`
-* **Changes**: Initialized folders for `auth-service`, `order-service`, and `inventory-service`.
-* **Description**: Set up basic Node.js configurations (`package.json`), TypeScript configurations (`tsconfig.json`), and basic Express web server setups (`src/main.ts`) running on their respective ports (3001, 3005, and 3004) without any business logic.
+* **Cambios realizados**: Inicialización de las carpetas para `auth-service`, `order-service` e `inventory-service`.
+* **Descripción**: Se configuraron los archivos base de Node.js (`package.json`), las configuraciones de TypeScript (`tsconfig.json`) y los servidores web mínimos con Express (`src/main.ts`) escuchando en sus puertos respectivos (3001, 3005 y 3004), sin ninguna lógica de negocio.
 
 ### Commit 2: `feat: configure mock message broker client connection in all services`
-* **Changes**: Added a mock Message Broker client stub under `src/broker/broker.client.ts` for each service.
-* **Description**: Simulates the publisher-subscriber and broker connection lifecycle. The `bootstrap()` function of each service's `main.ts` was updated to await the broker's connection simulation before starting up.
+* **Cambios realizados**: Se agregó un stub del cliente de mensajería bajo `src/broker/broker.client.ts` en cada servicio.
+* **Descripción**: Simula el ciclo de vida de conexión y los métodos publicar/suscribir (Pub/Sub) del Message Broker. La función `bootstrap()` de cada `main.ts` fue actualizada para aguardar la conexión simulada al broker antes de iniciar el servidor HTTP.
 
 ### Commit 3: `feat: configure api-gateway reverse proxy stub`
-* **Changes**: Initialized the `services/api-gateway/` folder.
-* **Description**: Built an Express-based gateway proxy utilizing `http-proxy-middleware`. It listens on port `3000` and proxies traffic as follows:
-  * `/auth/*` -> `http://localhost:3001` (Auth Service)
-  * `/inventory/*` -> `http://localhost:3004` (Inventory Service)
-  * `/orders/*` -> `http://localhost:3005` (Order Service)
+* **Cambios realizados**: Inicialización de la carpeta `services/api-gateway/`.
+* **Descripción**: Se construyó un proxy gateway basado en Express utilizando `http-proxy-middleware`. Escucha en el puerto `3000` y redirige el tráfico de la siguiente manera:
+  * `/auth/*` → `http://localhost:3001` (Auth Service)
+  * `/inventory/*` → `http://localhost:3004` (Inventory Service)
+  * `/orders/*` → `http://localhost:3005` (Order Service)
 
 ### Commit 4: `chore: add docker-compose and base Dockerfiles`
-* **Changes**: Added multi-stage `Dockerfile` configurations to all services and the API Gateway. Added a root-level `docker-compose.yml`.
-* **Description**: The Dockerfiles compile TypeScript source files into JavaScript for production execution. The `docker-compose.yml` orchestrates the API Gateway, the three microservices, and a RabbitMQ container (`rabbitmq:3-management`) on a shared bridge network (`tfi_network`).
+* **Cambios realizados**: Se agregaron configuraciones `Dockerfile` multi-stage para todos los servicios y el API Gateway. Se añadió un `docker-compose.yml` en la raíz del proyecto.
+* **Descripción**: Los Dockerfiles compilan los archivos TypeScript a JavaScript para su ejecución en producción. El `docker-compose.yml` orquesta el API Gateway, los tres microservicios y un contenedor de RabbitMQ (`rabbitmq:3-management`) en una red de tipo bridge compartida llamada `tfi_network`.

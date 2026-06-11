@@ -1,4 +1,41 @@
+# Dependencias
 node_modules/
+
+# Compilados de TypeScript
 dist/
+build/
+*.js.map
+
+# Variables de entorno
 .env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDE / Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Cobertura de tests
+coverage/
+.nyc_output/
+
+# Lock files (generados automáticamente)
 package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Docker
+.dockerignore
