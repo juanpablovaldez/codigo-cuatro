@@ -19,21 +19,21 @@ services:
       - "${GATEWAY_PORT:-3000}:3000"
     environment:
       - PORT=3000
-      - PRODUCTS_SERVICE_HOST=products-service
-      - PRODUCTS_SERVICE_PORT=3003
-      - ORDERS_SERVICE_HOST=orders-service
-      - ORDERS_SERVICE_PORT=3005
+      - CATALOG_SERVICE_HOST=catalog-service
+      - CATALOG_SERVICE_PORT=3003
+      - ORDER_SERVICE_HOST=order-service
+      - ORDER_SERVICE_PORT=3005
     depends_on:
-      - products-service
-      - orders-service
+      - catalog-service
+      - order-service
     networks:
       - tfi_network
 
-  products-service:
+  catalog-service:
     build:
-      context: ./services/products
+      context: ./services/catalog-service
       dockerfile: Dockerfile
-    container_name: tfi_products_service
+    container_name: tfi_catalog_service
     expose:
       - "3003"
     environment:
@@ -41,11 +41,11 @@ services:
     networks:
       - tfi_network
 
-  orders-service:
+  order-service:
     build:
-      context: ./services/orders
+      context: ./services/order-service
       dockerfile: Dockerfile
-    container_name: tfi_orders_service
+    container_name: tfi_order_service
     expose:
       - "3005"
     environment:
