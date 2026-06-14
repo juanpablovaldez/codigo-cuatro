@@ -1,3 +1,16 @@
+---
+title: "Fase 2A — Microservicios Tradicionales (REST Síncrono)"
+tags: [fase-2, microservicios, rest, api-gateway, circuit-breaker, nestjs]
+fase: 2
+paso: A
+issues: ["#5", "#6"]
+estado: completo
+relacionado:
+  - "[[02-arquitectura-inicial]]"
+  - "[[10-cache-alta-disponibilidad]]"
+  - "[[00-reporte-esqueleto]]"
+---
+
 # Fase 2 - Paso A: Arquitectura de Microservicios Tradicionales (REST Síncrono)
 
 ## 1. Contexto: por qué el monolito ya no alcanza
@@ -255,6 +268,9 @@ Esta arquitectura resuelve el problema de escalado independiente, pero introduce
 
 Estas limitaciones son las que justifican evolucionar hacia una arquitectura event-driven en el **Paso B** de esta misma fase.
 
+> [!info] Paso B — Pendiente
+> La arquitectura Event-Driven con Message Broker (RabbitMQ) es el siguiente paso de esta fase. Ver issue **#7** (`[Fase 2] Diseñar arquitectura de microservicios modernos con Event-Driven`) y el futuro documento `07-microservicios-event-driven`.
+
 ---
 
 ## 13. Conclusión
@@ -268,4 +284,4 @@ Los patrones clave aplicados en esta arquitectura son:
 - **Circuit Breaker** para proteger el flujo de checkout de fallos en cascada.
 - **Data snapshot** en `order_items` para evitar dependencias de lectura en tiempo real entre dominios.
 
-Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B.
+Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B (ver issue #7).
