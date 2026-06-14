@@ -1,3 +1,16 @@
+---
+title: "Fase 2A — Microservicios Tradicionales (REST Síncrono)"
+tags: [fase-2, microservicios, rest, api-gateway, circuit-breaker, nestjs]
+fase: 2
+paso: A
+issues: ["#5", "#6"]
+estado: completo
+relacionado:
+  - "[[02-arquitectura-inicial]]"
+  - "[[10-cache-alta-disponibilidad]]"
+  - "[[00-reporte-esqueleto]]"
+---
+
 # Fase 2 - Paso A: Arquitectura de Microservicios Tradicionales (REST Síncrono)
 
 ## 1. Contexto: por qué el monolito ya no alcanza
@@ -8,13 +21,14 @@ Sin embargo, el escenario de negocio cambió. La plataforma fue adoptada por com
 
 | Síntoma | Causa en el monolito |
 |---------|----------------------|
-| Lentitud en el checkout | El módulo de órdenes compite por recursos con el catálogo y las notificaciones |
-| Errores en stock | Actualizaciones concurrentes sobre la misma base de datos sin aislamiento |
-| Deploy riesgoso | Un cambio en notificaciones requiere redesplegar toda la API |
-| Equipo bloqueado | Cuatro desarrolladores editando los mismos archivos genera conflictos constantes |
-| Pagos frágiles | Un timeout del proveedor externo puede tumbar el hilo de la API entera |
+| Lentitud en el checkout | El módulo de órdenes compite por el mismo pool de conexiones a PostgreSQL que el catálogo |
+| Errores en stock (sobreventa) | Acceso concurrente no aislado: dos transacciones leen disponibilidad al mismo tiempo y ambas confirman |
+| Deploy genera downtime total | Cualquier cambio obliga a redesplegar toda la API, generando 15-40 segundos de indisponibilidad |
+| Equipo bloqueado | Seis desarrolladores sobre el mismo codebase generan conflictos frecuentes en archivos compartidos |
+| Pagos frágiles (propagación de fallos) | Un timeout del proveedor externo degrada toda la API por falta de aislamiento entre módulos |
+| Notificaciones inflaban la latencia del checkout | El email de confirmación se enviaba de forma síncrona dentro del mismo flujo del pedido, agregando ~1,6s |
 
-El escenario concreto que fuerza la migración es el siguiente: la plataforma alcanzó **500 comercios activos**, **15.000 clientes registrados** y picos de **800 pedidos por hora** durante fechas de alta demanda. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
+El escenario concreto que fuerza la migración es el siguiente: la plataforma creció a **487 comercios activos**, **14.300 clientes registrados**, **38.000 productos publicados** y picos de **820 pedidos por hora** con **1.400 usuarios concurrentes** (~210 RPS). Esto representa aproximadamente 30x más usuarios concurrentes y 80x más pedidos en hora pico respecto al diseño del MVP. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
 
 Esta es la situación que justifica evolucionar hacia microservicios.
 
@@ -254,6 +268,9 @@ Esta arquitectura resuelve el problema de escalado independiente, pero introduce
 
 Estas limitaciones son las que justifican evolucionar hacia una arquitectura event-driven en el **Paso B** de esta misma fase.
 
+> [!info] Paso B — Pendiente
+> La arquitectura Event-Driven con Message Broker (RabbitMQ) es el siguiente paso de esta fase. Ver issue **#7** (`[Fase 2] Diseñar arquitectura de microservicios modernos con Event-Driven`) y el futuro documento `07-microservicios-event-driven`.
+
 ---
 
 ## 13. Conclusión
@@ -267,4 +284,4 @@ Los patrones clave aplicados en esta arquitectura son:
 - **Circuit Breaker** para proteger el flujo de checkout de fallos en cascada.
 - **Data snapshot** en `order_items` para evitar dependencias de lectura en tiempo real entre dominios.
 
-Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B.
+Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B (ver issue #7).

@@ -1,3 +1,13 @@
+---
+title: "Artefacto — Reporte de Esqueleto de Microservicios"
+tags: [artefacto, esqueleto, microservicios, nestjs, commits, fase-2]
+issues: ["#4", "#9"]
+estado: completo
+relacionado:
+  - "[[06-microservicios-tradicionales]]"
+  - "[[02-arquitectura-inicial]]"
+---
+
 # Reporte de Implementación del Esqueleto de Microservicios
 
 Este reporte documenta la implementación del esqueleto de microservicios del sistema e-commerce multivendedor. La arquitectura está basada en **NestJS con `@nestjs/microservices`** y comunicación **TCP** entre el API Gateway y los servicios internos.
@@ -57,7 +67,7 @@ codigo-cuatro/
 
 ## 3. Servicios Implementados vs. Documentados
 
-El documento [`06-microservicios-tradicionales.md`](./06-microservicios-tradicionales.md) define 9 servicios. En este esqueleto se implementaron todos como stubs NestJS para garantizar la coherencia arquitectónica:
+El documento [[06-microservicios-tradicionales]] define 9 servicios. En este esqueleto se implementaron todos como stubs NestJS para garantizar la coherencia arquitectónica:
 
 | Servicio (doc 06) | Puerto | Estado en esqueleto | Notas |
 |-------------------|--------|---------------------|-------|
@@ -100,11 +110,14 @@ Cliente HTTP
 
 ### Estado de Evolución de Comunicación (Paso A vs. Paso B)
 
-* **Paso A: Microservicios Tradicionales (Comunicación Síncrona) — *Implementado en Código*:** 
+* **Paso A: Microservicios Tradicionales (Comunicación Síncrona) — *Implementado en Código*:**
   La comunicación entre el API Gateway y los microservicios se realiza mediante **TCP directo** (`Transport.TCP` nativo de NestJS). Cada microservicio expone un puerto TCP específico (ej. `3003` para `catalog-service`, `3005` para `order-service`) y el Gateway enruta las peticiones de manera directa y síncrona.
-  
-* **Paso B: Microservicios Modernos (Orientados a Eventos) — *Preparado en Infraestructura*:** 
-  En el archivo [`docker-compose.yml`](../docker-compose.yml) ya se encuentra definido y aprovisionado el broker de mensajería **RabbitMQ** (`rabbitmq:3-management` en los puertos `5672` y `15672`). Sin embargo, para evidenciar la evolución requerida por el TFI, los microservicios y el gateway **no están conectados aún en código** a este servicio (no se utiliza `Transport.RMQ`). Esto permitirá migrar en una fase posterior reemplazando el transporte sin modificar la lógica interna de los stubs de NestJS, demostrando un acoplamiento laxo.
+
+* **Paso B: Microservicios Modernos (Orientados a Eventos) — *Preparado en Infraestructura*:**
+  En el archivo [`docker-compose.yml`](../docker-compose.yml) ya se encuentra definido y aprovisionado el broker de mensajería **RabbitMQ** (`rabbitmq:3-management` en los puertos `5672` y `15672`). Sin embargo, los microservicios y el gateway **no están conectados aún en código** a este servicio (no se utiliza `Transport.RMQ`). Esto permitirá migrar en una fase posterior reemplazando el transporte sin modificar la lógica interna de los stubs de NestJS, demostrando acoplamiento laxo.
+
+> [!info] Paso B pendiente
+> La arquitectura Event-Driven con RabbitMQ corresponde al issue **#7**. Ver el futuro `07-microservicios-event-driven`.
 
 ---
 

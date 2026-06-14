@@ -1,3 +1,15 @@
+---
+title: "Fase 1 — Arquitectura Inicial y Justificación"
+tags: [fase-1, arquitectura, monolito, nestjs, mvp]
+fase: 1
+issues: ["#2", "#3"]
+estado: completo
+relacionado:
+  - "[[01-modelo-negocio]]"
+  - "[[06-microservicios-tradicionales]]"
+  - "[[00-reporte-esqueleto]]"
+---
+
 # Fase 1 - Arquitectura Inicial y Justificación
 
 
@@ -116,6 +128,10 @@ Se utiliza **Terraform sobre AWS** porque permite definir infraestructura como c
 
 ## 5. Diagrama de arquitectura inicial
 
+![Diagrama de arquitectura inicial — Fase 1 (Monolito)](diagrama_monolito_tfi.png)
+
+El diagrama siguiente reproduce la misma información en texto plano para documentos sin soporte de imágenes:
+
 ```txt
 ┌────────────────────────────────┐
 │       Usuario Web               │
@@ -170,6 +186,37 @@ Se utiliza **Terraform sobre AWS** porque permite definir infraestructura como c
 │ SES, KMS                        │
 └────────────────────────────────┘
 ```
+
+---
+
+### 5.1 Descripción de cada componente del diagrama
+
+Cada elemento del diagrama tiene una responsabilidad acotada. La tabla siguiente mapea 1:1 cada caja y canal del diagrama a su descripción técnica.
+
+| Componente | Tipo | Descripción |
+|------------|------|-------------|
+| **Usuario Web** (Cliente / Vendedor / Admin) | Actor externo | Tres tipos de usuarios que interactúan desde el navegador. No forma parte del código; es el origen de todas las peticiones. |
+| **`web/`** | Aplicación frontend independiente | Interfaz desarrollada con React 19 + Vite. Gestiona enrutamiento (TanStack Router), estado del servidor (TanStack Query), estado local (Zustand) y UI (shadcn/ui + Tailwind CSS). |
+| **HTTP / REST API** | Canal de comunicación | Protocolo de transporte entre frontend y backend. Todas las peticiones viajan por HTTP sobre TLS. |
+| **`api/` — Capa de Transporte** | Subcapa del backend | Controladores NestJS que reciben peticiones HTTP, validan el formato de entrada (DTOs con class-validator) y delegan a la capa de aplicación. Implementa versionado de URI (`/v1/`). |
+| **`api/` — Capa de Aplicación** | Subcapa del backend | Servicios NestJS con la lógica de negocio: validaciones, cálculos, autorización por rol y orquestación entre módulos. Única capa que toma decisiones de negocio. |
+| **`api/` — Capa de Datos** | Subcapa del backend | Acceso a la base de datos a través de Prisma ORM. Abstrae las consultas SQL y aplica los modelos del dominio. Sin lógica de negocio propia. |
+| **Módulos internos** | Organización interna de `api/` | Cada dominio del e-commerce es un módulo NestJS independiente: `auth`, `users`, `companies`, `invitations`, `admin`, `catalog`, `products`, `inventory`, `orders`, `payments`, `resources`, `faqs`, `storage`, `notifications`. Cada módulo encapsula su controlador, servicio y repositorio. |
+| **`PostgreSQL 16`** | Base de datos relacional | Motor de persistencia único en el MVP. Todos los módulos comparten el mismo esquema y conexión. Garantiza ACID para operaciones críticas (stock, pedidos, pagos). |
+| **`infra/`** | Infraestructura como código | Archivos Terraform que definen los recursos de AWS: Cognito (autenticación federada), RDS (base de datos administrada), S3 (almacenamiento de imágenes y recursos), CloudFront (CDN), SES (emails transaccionales), KMS (gestión de claves). |
+
+---
+
+### 5.2 Leyenda de convenciones de notación
+
+| Elemento visual | Significado |
+|-----------------|-------------|
+| Caja con borde sólido | Componente o aplicación independiente (`web/`, `PostgreSQL 16`, `infra/`, `Usuario Web`) |
+| Caja con borde punteado | Agrupación lógica interna que contiene subcomponentes (el recuadro de `api/` agrupa las tres capas y los módulos) |
+| Flecha sólida `─►` | Comunicación directa y síncrona: HTTP request o query SQL |
+| Texto sobre la flecha | Protocolo o tipo de comunicación (`HTTP / REST API`) |
+| Elementos apilados verticalmente | Capas de la misma aplicación, de mayor abstracción (arriba) a menor (abajo): Transporte → Aplicación → Datos |
+| Caja flotante sin flecha directa | Componente de infraestructura complementario (`infra/`) que no participa en el flujo HTTP en tiempo de ejecución |
 
 ---
 
