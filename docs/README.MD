@@ -1,27 +1,56 @@
-### **1. Planteo Arquitectónico Inicial**
-Para esta etapa fundacional (MVP), se ha diseñado una **Arquitectura Monolítica basada en un modelo Cliente-Servidor**.
+---
+title: "Índice de Documentación Técnica — TFI"
+tags: [indice, tfi, documentacion]
+---
 
-* **Capa de Presentación (Cliente Web):** Interfaz de usuario dinámica que consume datos de forma asíncrona, optimizada para ofrecer una experiencia fluida e interactiva en el navegador.
-* **Capa de Lógica de Negocio (Servidor de Aplicación):** Un monolito centralizado, estructurado internamente mediante el patrón de diseño por capas (Controladores, Servicios, Repositorios) o MVC tradicional.
-* **Capa de Persistencia:** Sistema de Gestión de Bases de Datos Relacionales (RDBMS).
-* **Integraciones Externas:** Delegación de procesamiento de pagos y envío de comunicaciones a servicios de terceros a través de APIs.
+# Documentación Técnica — TFI Desarrollo Web
 
-### **2. Justificación Técnica y de Negocio**
+Índice de la carpeta `docs/`. Cada documento cubre una fase del TFI y mapea a sus issues en el tablero del proyecto.
 
-Cada decisión arquitectónica en esta fase responde a la necesidad de lanzar un producto funcional, seguro y mantenible, minimizando la complejidad operativa inicial:
+---
 
-* **¿Por qué un Monolito para arrancar?** En la fase inicial de un e-commerce, el volumen de tráfico suele ser bajo a moderado. Un monolito permite un *time-to-market* ágil, unifica el proceso de despliegue y reduce drásticamente los costos de infraestructura. Separar el sistema prematuramente en microservicios añadiría una latencia de red innecesaria y una complejidad operativa injustificada para el volumen de negocio actual.
-* **Elección del Patrón por Capas:** La separación interna del backend en capas bien definidas (enrutamiento, reglas de negocio y acceso a datos) fomenta la escritura de un código modular y altamente testeable. Este aislamiento de responsabilidades facilitará enormemente la futura extracción de dominios hacia microservicios en fases posteriores.
-* **Elección de Persistencia Relacional:** La naturaleza transaccional de un e-commerce exige un control estricto sobre el inventario y las finanzas. Un motor relacional asegura el cumplimiento de las propiedades ACID (Atomicidad, Consistencia, Aislamiento, Durabilidad). Esto es fundamental para garantizar la integridad referencial y evitar anomalías como la venta en simultáneo de un mismo artículo sin stock.
-* **Límites de la Arquitectura:** Este modelo encontrará su cuello de botella frente a picos masivos de concurrencia. Al intentar escalar el sistema horizontalmente, el monolito obliga a replicar la aplicación en su totalidad (consumiendo más memoria y cómputo global) en lugar de escalar únicamente el servicio estresado (como podría ser el motor de búsqueda del catálogo), volviéndose ineficiente a nivel de costos.
+## Índice de documentos
 
-### **3. Descripción de los Componentes y Flujo End-to-End**
+| Documento | Fase TFI | Issues | Estado |
+|-----------|----------|--------|--------|
+| [[01-modelo-negocio]] | Fase 1 — Temática y Modelo de Negocio | #1 | ✅ Completo |
+| [[02-arquitectura-inicial]] | Fase 1 — Arquitectura Monolítica (Canónico) | #2, #3 | ✅ Completo |
+| [[06-microservicios-tradicionales]] | Fase 2A — Microservicios REST Síncrono | #5, #6 | ✅ Completo |
+| `07-microservicios-event-driven` | Fase 2B — Microservicios Event-Driven | #7, #8 | 🔄 Pendiente |
+| [[10-cache-alta-disponibilidad]] | Fase 3 — Caché y Alta Disponibilidad | #10 | ✅ Completo |
+| `11-read-replicas` | Fase 3 — Read Replicas | #11 | 🔄 Pendiente |
+| `12-balanceadores-autoscaling` | Fase 3 — Balanceadores y Auto-scaling | #12 | 🔄 Pendiente |
+| `13-ambientes-devops` | Fase 4 — Ambientes, CI/CD, Kubernetes, Terraform | #13–#17 | 🔄 Pendiente |
+| `18-costos-infraestructura` | Fase 4 — Estimación de costos en la nube | #18 | 🔄 Pendiente |
+| `19-integracion-ia` | Fase 5 — Integración con IA (LLM / RAG) | #19, #20 | 🔄 Pendiente |
+| [[00-reporte-esqueleto]] | Artefacto — Esqueleto de microservicios | #4, #9 | ✅ Completo |
 
-A continuación, se detalla el comportamiento de los componentes frente a una petición crítica del sistema: **El proceso de Checkout**.
+---
 
-1. **Interacción en el Cliente Web:** El usuario finaliza su selección y presiona la acción de pago. El cliente compila los datos del carrito y envía la carga útil (*payload*) mediante una petición HTTP POST al servidor.
-2. **Validación en el Servidor de Aplicación:** La capa de controladores recibe la petición. La capa de servicios verifica la autenticación del usuario y consulta mediante la capa de repositorios la disponibilidad real de los artículos.
-3. **Persistencia y Bloqueo Transaccional:** Se abre una transacción en la base de datos relacional. Si existe disponibilidad, se descuenta temporalmente el stock (bloqueo lógico preventivo) y se genera la entidad de la orden en estado "Pendiente".
-4. **Integración Externa (Pagos):** Por normativas de seguridad e industria, el servidor propio no procesa credenciales financieras directamente. Se realiza una llamada externa síncrona a la API del proveedor de pagos, delegando el procesamiento del cobro.
-5. **Notificación Asíncrona:** Tras recibir la confirmación (mediante *webhook* o respuesta síncrona) de que el pago fue aprobado, la base de datos consolida la transacción del pedido. Inmediatamente, el servidor dispara un evento hacia el servicio de mensajería externo para enviar el comprobante digital al usuario.
-6. **Respuesta Final:** El servidor retorna un código de éxito HTTP al cliente web, cerrando el circuito y permitiendo que la interfaz redirija a la pantalla de confirmación de compra.
+## Estado por fase
+
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| Fase 1 | Temática, modelo de negocio y arquitectura monolítica | ✅ Documentada |
+| Fase 2A | Microservicios tradicionales (REST síncrono) | ✅ Documentada |
+| Fase 2B | Microservicios modernos (event-driven con RabbitMQ) | 🔄 Pendiente — ver #7 |
+| Fase 3 | Caché (Redis) documentada; read replicas y balanceadores pendientes | 🔄 Parcial |
+| Fase 4 | Infraestructura, DevOps, ambientes, IaC, costos | 🔄 Pendiente |
+| Fase 5 | Integración con IA (LLM o RAG) | 🔄 Pendiente |
+
+---
+
+## Convención de numeración
+
+Los documentos siguen el esquema `NN-nombre-del-tema.md` donde `NN` es el número del issue principal que cubre. El prefijo `00` se reserva para reportes de artefactos técnicos (esqueletos, commits).
+
+Documentos futuros deben seguir este mismo esquema y registrarse en este índice antes de commitearse.
+
+---
+
+## Imágenes y recursos
+
+| Archivo | Descripción | Referenciado en |
+|---------|-------------|-----------------|
+| `diagrama_monolito_tfi.png` | Diagrama de arquitectura inicial (Fase 1) | [[02-arquitectura-inicial]] |
+| `historial_commits_esqueleto.png` | Captura del historial de commits del esqueleto | [[00-reporte-esqueleto]] |

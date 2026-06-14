@@ -1,3 +1,13 @@
+---
+title: "Fase 1 — Definición de Temática y Modelo de Negocio"
+tags: [fase-1, modelo-negocio, ecommerce, temática]
+fase: 1
+issues: ["#1"]
+estado: completo
+relacionado:
+  - "[[02-arquitectura-inicial]]"
+---
+
 Fase 1 - Definición de Temática y Modelo de Negocio
 
 ## Descripción del Negocio y Contexto

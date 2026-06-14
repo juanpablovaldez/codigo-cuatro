@@ -1,3 +1,13 @@
+---
+title: "Fase 3 — Estrategia de Caché para Alta Disponibilidad"
+tags: [fase-3, cache, redis, alta-disponibilidad, nestjs]
+fase: 3
+issues: ["#10"]
+estado: completo
+relacionado:
+  - "[[06-microservicios-tradicionales]]"
+---
+
 # Fase 3 - Estrategia de Caché para Alta Disponibilidad
 
 ## 1. Contexto
@@ -313,4 +323,7 @@ La estrategia diferenciada por tipo de dato (Cache-Aside para catálogo, Write-T
 
 Los tres riesgos principales (cache stampede, inconsistencia eventual y cold start) tienen mitigaciones concretas implementables sin complejidad adicional significativa.
 
-Esta capa de caché, combinada con la replicación de base de datos (Read Replicas) y los balanceadores de carga definidos en los issues #11 y #12, forma la base de robustez de la Fase 3.
+Esta capa de caché, combinada con la replicación de base de datos (Read Replicas) y los balanceadores de carga, forma la base de robustez de la Fase 3.
+
+> [!info] Diseños pendientes
+> La estrategia de Read Replicas (issue **#11**) y los balanceadores de carga con auto-scaling (issue **#12**) están en curso. Sus documentos (`11-read-replicas` y `12-balanceadores-autoscaling`) serán enlazados desde el [[README]] cuando estén disponibles.
