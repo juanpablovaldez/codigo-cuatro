@@ -1,21 +1,22 @@
-import express from 'express';
-import { BrokerClient } from './broker/broker.client';
-
-const app = express();
-const PORT = process.env.PORT || 3005;
-const broker = BrokerClient.getInstance();
-
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'UP', service: 'order-service', brokerConnected: true });
-});
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  await broker.connect('order-service');
-  app.listen(PORT, () => {
-    console.log(`Order Service is running on port ${PORT}`);
-  });
+  // Este servicio NO expone HTTP. Escucha mensajes TCP directamente.
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: '0.0.0.0',
+        port: Number(process.env.PORT) || 3005,
+      },
+    },
+  );
+
+  await app.listen();
+  console.log('[Order Service] TCP microservice listening on port 3005');
 }
 
 bootstrap();

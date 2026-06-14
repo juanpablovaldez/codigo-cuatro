@@ -17,8 +17,8 @@ El sistema conecta a tres actores principales: clientes que compran productos on
 
 | Área | Tecnología |
 |------|------------|
-| Backend (microservicios) | Node.js + TypeScript + Express |
-| API Gateway | Express + http-proxy-middleware |
+| Backend (microservicios) | NestJS (TypeScript) |
+| API Gateway | NestJS (HTTP → TCP Proxy) |
 | Base de datos | PostgreSQL 16 |
 | Message Broker | RabbitMQ |
 | Contenedores | Docker + Docker Compose |
@@ -33,11 +33,17 @@ El sistema conecta a tres actores principales: clientes que compran productos on
 ```txt
 codigo-cuatro/
 ├── docs/                        # Documentación técnica del TFI (por fase)
+├── gateway/                     # NestJS API Gateway (HTTP → TCP, Puerto 3000)
 ├── services/
-│   ├── api-gateway/             # Proxy inverso (punto de entrada único)
-│   ├── auth-service/            # Autenticación y JWT (Puerto 3001)
-│   ├── inventory-service/       # Control de stock (Puerto 3004)
-│   └── order-service/           # Gestión de pedidos (Puerto 3005)
+│   ├── catalog-service/         # Catálogo de productos (Puerto 3003)
+│   ├── order-service/           # Gestión de pedidos (Puerto 3005)
+│   ├── auth-service/            # Autenticación (Stub, Puerto 3008)
+│   ├── inventory-service/       # Control de stock (Stub, Puerto 3004)
+│   ├── payment-service/         # Gestión de pagos (Stub, Puerto 3006)
+│   ├── notification-service/    # Notificaciones (Stub, Puerto 3007)
+│   ├── user-service/            # Gestión de usuarios (Stub, Puerto 3009)
+│   ├── storage-service/         # Almacenamiento (Stub, Puerto 3010)
+│   └── admin-service/           # Administración (Stub, Puerto 3011)
 ├── docker-compose.yml           # Orquestación local de todos los servicios
 ├── .gitignore
 ├── .eslintrc.json
@@ -105,12 +111,12 @@ feature/nueva-funcionalidad
 docker-compose up --build
 ```
 
-Esto levanta: API Gateway (3000), Auth Service (3001), Inventory Service (3004), Order Service (3005) y RabbitMQ (5672 / UI: 15672).
+Esto levanta: API Gateway (3000), Catalog Service (3003), Order Service (3005) y RabbitMQ (5672 / UI: 15672). (Nota: los stubs no están habilitados por defecto en el docker-compose).
 
 ### Opción 2: Ejecutar un servicio individualmente
 
 ```bash
-cd services/auth-service
+cd services/catalog-service
 npm install
 npm start
 ```
@@ -120,8 +126,7 @@ npm start
 | Servicio | URL |
 |----------|-----|
 | API Gateway | http://localhost:3000/health |
-| Auth Service (vía Gateway) | http://localhost:3000/auth/health |
-| Inventory Service (vía Gateway) | http://localhost:3000/inventory/health |
+| Catalog Service (vía Gateway) | http://localhost:3000/catalog/health |
 | Order Service (vía Gateway) | http://localhost:3000/orders/health |
 
 ---

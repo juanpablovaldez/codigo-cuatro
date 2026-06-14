@@ -3,6 +3,9 @@
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
     "target": "es2021",
     "sourceMap": true,
     "outDir": "./dist",
@@ -12,5 +15,6 @@
     "noImplicitAny": false,
     "forceConsistentCasingInFileNames": false
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

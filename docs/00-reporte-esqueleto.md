@@ -10,144 +10,124 @@ relacionado:
 
 # Reporte de Implementación del Esqueleto de Microservicios
 
-Este reporte documenta la implementación del esqueleto de microservicios: el API Gateway, los servicios iniciales, los stubs del Message Broker, las configuraciones de Docker y el historial de commits construidos paso a paso.
+Este reporte documenta la implementación del esqueleto de microservicios del sistema e-commerce multivendedor. La arquitectura está basada en **NestJS con `@nestjs/microservices`** y comunicación **TCP** entre el API Gateway y los servicios internos.
 
-> [!info] Alcance del esqueleto
-> El esqueleto implementa **3 de los 9 servicios** definidos en [[06-microservicios-tradicionales]] (`auth-service`, `inventory-service`, `order-service`) más el `api-gateway`. Los 6 servicios restantes (`user-service`, `catalog-service`, `payment-service`, `notification-service`, `storage-service`, `admin-service`) serán incorporados en issues posteriores (#9).
-
-> [!warning] Deuda técnica — Stack de transporte
-> El esqueleto commiteado utiliza **Express** como framework de transporte (placeholder de arranque rápido). El diseño objetivo de la arquitectura es **NestJS 11**, conforme a lo documentado en [[02-arquitectura-inicial]] y [[06-microservicios-tradicionales]]. La migración Express → NestJS es una deuda técnica abierta, pendiente de ser resuelta en un issue dedicado antes de la entrega final.
+La fuente de verdad arquitectónica es el documento [`06-microservicios-tradicionales.md`](./06-microservicios-tradicionales.md), que define 9 servicios totales. En este esqueleto se implementaron los servicios con su estructura correspondiente, utilizando stubs funcionales en NestJS.
 
 ---
 
-## 1. Estructura de Carpetas
+## 1. Decisiones Arquitectónicas Clave
+
+### Autenticación: delegada a AWS Cognito
+El servicio `auth-service` cuenta con un esqueleto (stub), pero la autenticación y la emisión de JWT quedarán delegadas completamente a **AWS Cognito** (servicio administrado de AWS). El Gateway verificará los tokens JWT emitidos por Cognito en cada request entrante.
+
+**Justificación**: Cognito elimina la complejidad operativa de gestionar rotación de tokens, MFA, password policies y compliance, siguiendo la estrategia de usar servicios administrados de AWS definida en la Fase 4 del TFI.
+
+### Transporte: TCP (NestJS Microservices)
+La comunicación entre el Gateway y los microservicios usa **TCP con `@nestjs/microservices`** en lugar de HTTP/REST puro. Esto sigue el patrón nativo de NestJS para microservicios y simplifica la evolución futura hacia RabbitMQ/AMQP (Fase 2B del TFI).
+
+---
+
+## 2. Estructura de Carpetas
 
 ```txt
 codigo-cuatro/
-├── docker-compose.yml                      # Orquestador raíz
+├── .env.example                         # Variables de entorno (plantilla)
+├── docker-compose.yml                   # Orquestador raíz
 ├── docs/
-│   └── 00-reporte-esqueleto.md             # Este reporte
+│   └── 00-reporte-esqueleto.md          # Este reporte
+├── gateway/                             # NestJS API Gateway (HTTP → TCP)
+│   ├── src/
+│   │   ├── app.module.ts                # ClientsModule con config TCP
+│   │   ├── main.ts                      # Bootstrap HTTP (puerto 3000)
+│   │   ├── catalog/
+│   │   │   ├── catalog.module.ts
+│   │   │   └── catalog.controller.ts    # Proxy HTTP → TCP hacia catalog
+│   │   └── order/
+│   │       ├── order.module.ts
+│   │       └── order.controller.ts      # Proxy HTTP → TCP hacia order
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
 └── services/
-    ├── api-gateway/                        # Proxy inverso (Puerto 3000)
-    │   ├── src/
-    │   │   └── main.ts                     # NestJS → NestFactory.create()
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── tsconfig.json
-    ├── auth-service/                       # Microservicio de autenticación (Puerto 3001)
-    │   ├── src/
-    │   │   ├── app.module.ts               # Módulo raíz NestJS
-    │   │   ├── broker/
-    │   │   │   └── broker.client.ts        # Stub del cliente de Message Broker
-    │   │   └── main.ts
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── tsconfig.json
-    ├── inventory-service/                  # Microservicio de inventario (Puerto 3004)
-    │   ├── src/
-    │   │   ├── app.module.ts
-    │   │   ├── broker/
-    │   │   │   └── broker.client.ts
-    │   │   └── main.ts
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── tsconfig.json
-    └── order-service/                      # Microservicio de pedidos (Puerto 3005)
-        ├── src/
-        │   ├── app.module.ts
-        │   ├── broker/
-        │   │   └── broker.client.ts
-        │   └── main.ts
-        ├── Dockerfile
-        └── package.json
+    ├── admin-service/                    # NestJS microservice — admin (Stub, TCP 3011)
+    ├── auth-service/                     # NestJS microservice — auth (Stub, TCP 3008)
+    ├── catalog-service/                  # NestJS microservice — catálogo (TCP 3003)
+    ├── inventory-service/                # NestJS microservice — inventario (Stub, TCP 3004)
+    ├── notification-service/             # NestJS microservice — notificaciones (Stub, TCP 3007)
+    ├── order-service/                    # NestJS microservice — pedidos (TCP 3005)
+    ├── payment-service/                  # NestJS microservice — pagos (Stub, TCP 3006)
+    ├── storage-service/                  # NestJS microservice — almacenamiento (Stub, TCP 3010)
+    └── user-service/                     # NestJS microservice — usuarios (Stub, TCP 3009)
 ```
+
+*(Cada servicio dentro de `services/` contiene su propio `src/`, `Dockerfile`, `package.json`, etc.)*
 
 ---
 
-## 2. Historial de Commits
+## 3. Servicios Implementados vs. Documentados
 
-La construcción fue dividida en commits incrementales. Cada commit representa una unidad bien definida de configuración inicial, sin lógica de negocio:
+El documento [[06-microservicios-tradicionales]] define 9 servicios. En este esqueleto se implementaron todos como stubs NestJS para garantizar la coherencia arquitectónica:
+
+| Servicio (doc 06) | Puerto | Estado en esqueleto | Notas |
+|-------------------|--------|---------------------|-------|
+| `auth-service` | 3008 | ⚡ Implementado (Stub) | Lógica delegada a AWS Cognito |
+| `user-service` | 3009 | ✅ Implementado (Stub) | Fase futura |
+| `catalog-service` | 3003 | ✅ Implementado | Estructura completa (Gateway + Servicio) |
+| `inventory-service` | 3004 | ✅ Implementado (Stub) | Separado de catalog |
+| `order-service` | 3005 | ✅ Implementado | Estructura completa (Gateway + Servicio) |
+| `payment-service` | 3006 | ✅ Implementado (Stub) | Fase futura |
+| `notification-service` | 3007 | ✅ Implementado (Stub) | Fase futura |
+| `storage-service` | 3010 | ✅ Implementado (Stub) | Fase futura |
+| `admin-service` | 3011 | ✅ Implementado (Stub) | Fase futura |
+
+---
+
+## 4. Flujo de Comunicación
+
+```
+Cliente HTTP
+    │
+    ▼ HTTPS (puerto 3000)
+┌──────────────────────────────────────┐
+│  gateway/                            │
+│  NestJS HTTP Server                  │
+│  Verifica JWT (AWS Cognito)          │
+│                                      │
+│  GET /catalog   → TCP → catalog/     │
+│  GET /orders    → TCP → order/       │
+│  POST /orders   → TCP → order/       │
+└───────────────┬──────────────────────┘
+                │ TCP
+        ┌───────┴────────┐
+        ▼                ▼
+┌────────────────┐  ┌────────────────┐
+│ catalog-service│  │ order-service  │
+│ TCP :3003      │  │ TCP :3005      │
+│ @MessageP.     │  │ @MessageP.     │
+└────────────────┘  └────────────────┘
+```
+
+### Estado de Evolución de Comunicación (Paso A vs. Paso B)
+
+* **Paso A: Microservicios Tradicionales (Comunicación Síncrona) — *Implementado en Código*:**
+  La comunicación entre el API Gateway y los microservicios se realiza mediante **TCP directo** (`Transport.TCP` nativo de NestJS). Cada microservicio expone un puerto TCP específico (ej. `3003` para `catalog-service`, `3005` para `order-service`) y el Gateway enruta las peticiones de manera directa y síncrona.
+
+* **Paso B: Microservicios Modernos (Orientados a Eventos) — *Preparado en Infraestructura*:**
+  En el archivo [`docker-compose.yml`](../docker-compose.yml) ya se encuentra definido y aprovisionado el broker de mensajería **RabbitMQ** (`rabbitmq:3-management` en los puertos `5672` y `15672`). Sin embargo, los microservicios y el gateway **no están conectados aún en código** a este servicio (no se utiliza `Transport.RMQ`). Esto permitirá migrar en una fase posterior reemplazando el transporte sin modificar la lógica interna de los stubs de NestJS, demostrando acoplamiento laxo.
+
+> [!info] Paso B pendiente
+> La arquitectura Event-Driven con RabbitMQ corresponde al issue **#7**. Ver el futuro `07-microservicios-event-driven`.
+
+---
+
+## 5. Historial de Commits de esta Feature
+
+Los siguientes commits fueron realizados en la rama `feature/nestjs-microservices-migration` (resumen de la reestructuración):
 
 ```txt
-* 7fb0d20 chore: add docker-compose and base Dockerfiles
-* ef44a15 feat: configure api-gateway reverse proxy stub
-* 86b8f24 feat: configure mock message broker client connection in all services
-* 1c5b45d feat: initialize skeletons for auth, order, and inventory services
+feat: align microservices structure with architectural documentation
+feat: add NestJS stubs for all 9 microservices
+refactor: rename products and orders to catalog and order-service
+feat: update gateway routes and client proxies
 ```
-
-![Historial de commits del esqueleto](historial_commits_esqueleto.png)
-
----
-
-## 3. Descripción de cada Commit
-
-### Commit 1: `feat: initialize skeletons for auth, order, and inventory services`
-
-**Cambios realizados:** inicialización de carpetas para `auth-service`, `order-service` e `inventory-service`.
-
-**Descripción:** se configuraron los archivos base de cada microservicio: `package.json` con dependencias de NestJS (`@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`), `tsconfig.json` para TypeScript y el servidor mínimo en `src/main.ts` con `NestFactory.create(AppModule)` escuchando en sus puertos respectivos (3001, 3005 y 3004). Cada servicio expone un endpoint `GET /health` implementado en un `HealthController` NestJS. Sin lógica de negocio.
-
----
-
-### Commit 2: `feat: configure mock message broker client connection in all services`
-
-**Cambios realizados:** se agregó `src/broker/broker.client.ts` en cada servicio.
-
-**Descripción:** implementa un stub del cliente de mensajería con los métodos `connect()`, `publish()` y `subscribe()`. Simula el ciclo de vida de la conexión a RabbitMQ sin establecer una conexión real, permitiendo validar la arquitectura del código antes de integrar `@nestjs/microservices` con `amqplib`. La función `bootstrap()` de cada `main.ts` invoca `broker.connect(serviceName)` antes de iniciar el servidor HTTP.
-
-> [!info] Integración real pendiente
-> La conexión real a RabbitMQ usará `@nestjs/microservices` con `Transport.RMQ` y el patrón de aplicación híbrida (`NestFactory.create()` para HTTP + `app.connectMicroservice()` para eventos). Ver [[06-microservicios-tradicionales]] → sección de comunicación y el futuro `07-microservicios-event-driven`.
-
----
-
-### Commit 3: `feat: configure api-gateway reverse proxy stub`
-
-**Cambios realizados:** inicialización de `services/api-gateway/`.
-
-**Descripción:** proxy de enrutamiento que escucha en el puerto `3000` y redirige el tráfico por prefijo de ruta hacia los servicios internos:
-
-| Prefijo de ruta | Servicio destino | Puerto interno |
-|----------------|------------------|----------------|
-| `/auth/*` | `auth-service` | 3001 |
-| `/inventory/*` | `inventory-service` | 3004 |
-| `/orders/*` | `order-service` | 3005 |
-
-Responsabilidades del API Gateway según el diseño de [[06-microservicios-tradicionales]]:
-- [x] Enrutamiento por prefijo
-- [ ] Validación de JWT (pendiente)
-- [ ] Rate limiting (pendiente — requiere Redis, ver [[10-cache-alta-disponibilidad]])
-- [ ] CORS centralizado (pendiente)
-
----
-
-### Commit 4: `chore: add docker-compose and base Dockerfiles`
-
-**Cambios realizados:** `Dockerfile` multi-stage para todos los servicios y `docker-compose.yml` en la raíz.
-
-**Descripción:** los Dockerfiles compilan TypeScript a JavaScript para producción. El `docker-compose.yml` orquesta el API Gateway, los tres microservicios y un contenedor de RabbitMQ (`rabbitmq:3-management`) en una red bridge compartida `tfi_network`.
-
-| Servicio | Puerto expuesto | Imagen |
-|---------|----------------|--------|
-| `rabbitmq` | 5672, 15672 | `rabbitmq:3-management` |
-| `api-gateway` | 3000 | Build local |
-| `auth-service` | 3001 | Build local |
-| `inventory-service` | 3004 | Build local |
-| `order-service` | 3005 | Build local |
-
-> [!warning] Pendiente en docker-compose
-> Los servicios aún no reciben la variable de entorno `RABBITMQ_URL`. Cuando se reemplace el stub por la conexión real a RabbitMQ, se deberá agregar `RABBITMQ_URL=amqp://rabbitmq:5672` en las variables de entorno de cada servicio.
-
----
-
-## 4. Servicios restantes (pendiente issue #9)
-
-Los siguientes 6 servicios están definidos en [[06-microservicios-tradicionales]] pero aún no tienen esqueleto implementado:
-
-| Servicio | Puerto | Issue |
-|---------|--------|-------|
-| `user-service` | 3002 | #9 |
-| `catalog-service` | 3003 | #9 |
-| `payment-service` | 3006 | #9 |
-| `notification-service` | 3007 | #9 |
-| `storage-service` | 3008 | #9 |
-| `admin-service` | 3009 | #9 |

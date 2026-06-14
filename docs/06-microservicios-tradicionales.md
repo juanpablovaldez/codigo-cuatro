@@ -47,15 +47,15 @@ Para identificar los servicios se tomaron dos criterios:
 
 | Servicio | Dominio | Responsabilidades | Puerto interno |
 |----------|---------|-------------------|----------------|
-| `auth-service` | Autenticación | Registro, login, emisión y validación de JWT, refresh tokens | 3001 |
-| `user-service` | Usuarios y comercios | CRUD de clientes, vendedores, invitaciones, perfil, gestión de comercios | 3002 |
+| `auth-service` | Autenticación | Registro, login, emisión y validación de JWT, refresh tokens | 3008 |
+| `user-service` | Usuarios y comercios | CRUD de clientes, vendedores, invitaciones, perfil, gestión de comercios | 3009 |
 | `catalog-service` | Catálogo | Productos, categorías, búsqueda, FAQs, recursos de ayuda | 3003 |
 | `inventory-service` | Stock | Disponibilidad, reservas, descuentos de stock, alertas de bajo stock | 3004 |
 | `order-service` | Pedidos | Creación, ciclo de vida del pedido, historial, estados | 3005 |
 | `payment-service` | Pagos | Integración con proveedor externo, confirmación, reversión | 3006 |
 | `notification-service` | Notificaciones | Envío de emails y avisos por cambio de estado de pedidos y compras | 3007 |
-| `storage-service` | Almacenamiento | Upload de imágenes de productos y recursos, integración con S3 | 3008 |
-| `admin-service` | Administración | Supervisión de usuarios, comercios, pedidos y métricas de plataforma | 3009 |
+| `storage-service` | Almacenamiento | Upload de imágenes de productos y recursos, integración con S3 | 3010 |
+| `admin-service` | Administración | Supervisión de usuarios, comercios, pedidos y métricas de plataforma | 3011 |
 
 Cada servicio es una aplicación NestJS independiente con su propia base de datos PostgreSQL. No comparten esquemas ni conexiones.
 
@@ -84,7 +84,7 @@ Cada servicio es una aplicación NestJS independiente con su propia base de dato
           ▼                     ▼                     ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │  auth-service    │  │  user-service    │  │  catalog-service │
-│  :3001           │  │  :3002           │  │  :3003           │
+│  :3008           │  │  :3009           │  │  :3003           │
 │  JWT / Auth      │  │  Usuarios /      │  │  Productos /     │
 │                  │  │  Comercios       │  │  Categorías      │
 └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
@@ -112,7 +112,7 @@ Cada servicio es una aplicación NestJS independiente con su propia base de dato
           ▼                     ▼                     ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │notification-svc  │  │  storage-service │  │  admin-service   │
-│  :3007           │  │  :3008           │  │  :3009           │
+│  :3007           │  │  :3010           │  │  :3011           │
 │  Emails / Avisos │  │  S3 / Archivos   │  │  Panel admin     │
 └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
          │                     │                     │
@@ -268,8 +268,8 @@ Esta arquitectura resuelve el problema de escalado independiente, pero introduce
 
 Estas limitaciones son las que justifican evolucionar hacia una arquitectura event-driven en el **Paso B** de esta misma fase.
 
-> [!info] Paso B — Pendiente
-> La arquitectura Event-Driven con Message Broker (RabbitMQ) es el siguiente paso de esta fase. Ver issue **#7** (`[Fase 2] Diseñar arquitectura de microservicios modernos con Event-Driven`) y el futuro documento `07-microservicios-event-driven`.
+> [!success] Paso B — Completo
+> La arquitectura Event-Driven con AWS SQS/SNS está documentada en [[07-microservicios-event-driven]]. Cubre CQRS, Saga por coreografía, Circuit Breaker en comunicación síncrona residual y consistencia eventual. Issue **#7** cerrado.
 
 ---
 
