@@ -8,13 +8,14 @@ Sin embargo, el escenario de negocio cambió. La plataforma fue adoptada por com
 
 | Síntoma | Causa en el monolito |
 |---------|----------------------|
-| Lentitud en el checkout | El módulo de órdenes compite por recursos con el catálogo y las notificaciones |
-| Errores en stock | Actualizaciones concurrentes sobre la misma base de datos sin aislamiento |
-| Deploy riesgoso | Un cambio en notificaciones requiere redesplegar toda la API |
-| Equipo bloqueado | Cuatro desarrolladores editando los mismos archivos genera conflictos constantes |
-| Pagos frágiles | Un timeout del proveedor externo puede tumbar el hilo de la API entera |
+| Lentitud en el checkout | El módulo de órdenes compite por el mismo pool de conexiones a PostgreSQL que el catálogo |
+| Errores en stock (sobreventa) | Acceso concurrente no aislado: dos transacciones leen disponibilidad al mismo tiempo y ambas confirman |
+| Deploy genera downtime total | Cualquier cambio obliga a redesplegar toda la API, generando 15-40 segundos de indisponibilidad |
+| Equipo bloqueado | Seis desarrolladores sobre el mismo codebase generan conflictos frecuentes en archivos compartidos |
+| Pagos frágiles (propagación de fallos) | Un timeout del proveedor externo degrada toda la API por falta de aislamiento entre módulos |
+| Notificaciones inflaban la latencia del checkout | El email de confirmación se enviaba de forma síncrona dentro del mismo flujo del pedido, agregando ~1,6s |
 
-El escenario concreto que fuerza la migración es el siguiente: la plataforma alcanzó **500 comercios activos**, **15.000 clientes registrados** y picos de **800 pedidos por hora** durante fechas de alta demanda. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
+El escenario concreto que fuerza la migración es el siguiente: la plataforma creció a **487 comercios activos**, **14.300 clientes registrados**, **38.000 productos publicados** y picos de **820 pedidos por hora** con **1.400 usuarios concurrentes** (~210 RPS). Esto representa aproximadamente 30x más usuarios concurrentes y 80x más pedidos en hora pico respecto al diseño del MVP. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
 
 Esta es la situación que justifica evolucionar hacia microservicios.
 
