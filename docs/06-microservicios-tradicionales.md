@@ -268,8 +268,8 @@ Esta arquitectura resuelve el problema de escalado independiente, pero introduce
 
 Estas limitaciones son las que justifican evolucionar hacia una arquitectura event-driven en el **Paso B** de esta misma fase.
 
-> [!info] Paso B — Pendiente
-> La arquitectura Event-Driven con Message Broker (RabbitMQ) es el siguiente paso de esta fase. Ver issue **#7** (`[Fase 2] Diseñar arquitectura de microservicios modernos con Event-Driven`) y el futuro documento `07-microservicios-event-driven`.
+> [!success] Paso B — Completo
+> La arquitectura Event-Driven con AWS SQS/SNS está documentada en [[07-microservicios-event-driven]]. Cubre CQRS, Saga por coreografía, Circuit Breaker en comunicación síncrona residual y consistencia eventual. Issue **#7** cerrado.
 
 ---
 

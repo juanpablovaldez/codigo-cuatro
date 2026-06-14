@@ -16,7 +16,7 @@ tags: [indice, tfi, documentacion]
 | [[01-modelo-negocio]] | Fase 1 — Temática y Modelo de Negocio | #1 | ✅ Completo |
 | [[02-arquitectura-inicial]] | Fase 1 — Arquitectura Monolítica (Canónico) | #2, #3 | ✅ Completo |
 | [[06-microservicios-tradicionales]] | Fase 2A — Microservicios REST Síncrono | #5, #6 | ✅ Completo |
-| `07-microservicios-event-driven` | Fase 2B — Microservicios Event-Driven | #7, #8 | 🔄 Pendiente |
+| [[07-microservicios-event-driven]] | Fase 2B — Microservicios Event-Driven | #7, #8 | ✅ Completo |
 | [[10-cache-alta-disponibilidad]] | Fase 3 — Caché y Alta Disponibilidad | #10 | ✅ Completo |
 | `11-read-replicas` | Fase 3 — Read Replicas | #11 | 🔄 Pendiente |
 | `12-balanceadores-autoscaling` | Fase 3 — Balanceadores y Auto-scaling | #12 | 🔄 Pendiente |
@@ -33,7 +33,7 @@ tags: [indice, tfi, documentacion]
 |------|-------------|--------|
 | Fase 1 | Temática, modelo de negocio y arquitectura monolítica | ✅ Documentada |
 | Fase 2A | Microservicios tradicionales (REST síncrono) | ✅ Documentada |
-| Fase 2B | Microservicios modernos (event-driven con RabbitMQ) | 🔄 Pendiente — ver #7 |
+| Fase 2B | Microservicios modernos (event-driven con AWS SQS/SNS) | ✅ Documentada |
 | Fase 3 | Caché (Redis) documentada; read replicas y balanceadores pendientes | 🔄 Parcial |
 | Fase 4 | Infraestructura, DevOps, ambientes, IaC, costos | 🔄 Pendiente |
 | Fase 5 | Integración con IA (LLM o RAG) | 🔄 Pendiente |
