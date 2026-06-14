@@ -10,13 +10,13 @@ async function bootstrap() {
       transport: Transport.TCP,
       options: {
         host: '0.0.0.0',
-        port: Number(process.env.PORT) || 3004,
+        port: Number(process.env.PORT) || 3006,
       },
     },
   );
 
   await app.listen();
-  console.log('[InventoryService] TCP microservice listening on port 3004');
+  console.log('[PaymentService] TCP microservice listening on port 3006');
 }
 
 bootstrap();

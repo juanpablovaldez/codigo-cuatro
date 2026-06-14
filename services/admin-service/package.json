@@ -1,7 +1,7 @@
 {
-  "name": "inventory-service",
+  "name": "admin-service",
   "version": "1.0.0",
-  "description": "NestJS InventoryService microservice — TCP transport",
+  "description": "NestJS AdminService microservice — TCP transport",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",
