@@ -1,0 +1,58 @@
+graph TD
+    %% Convenciones
+    classDef client fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef gateway fill:#ffe0b2,stroke:#f57c00,stroke-width:2px;
+    classDef service fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    classDef database fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    classDef broker fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef external fill:#eceff1,stroke:#455a64,stroke-width:2px;
+    classDef readmodel fill:#e0f7fa,stroke:#0097a7,stroke-width:2px;
+
+    Client[Cliente / Frontend]:::client -->|HTTP| Gateway[API Gateway]:::gateway
+
+    Broker((RabbitMQ <br/> Message Broker)):::broker
+
+    subgraph "Saga Coreografiada (Checkout)"
+        %% Publica la creación del pedido
+        OrderSvc[order-service]:::service -.->|1. Pub: OrderCreated| Broker
+        %% Reserva de stock
+        Broker -.->|2. Sub: OrderCreated| InventorySvc[inventory-service]:::service
+        InventorySvc -.->|3. Pub: StockReserved / StockRejected| Broker
+        %% Procesamiento de pago tras reserva
+        Broker -.->|4. Sub: StockReserved| PaymentSvc[payment-service]:::service
+        PaymentSvc -.->|5. Pub: PaymentAuthorized / PaymentFailed| Broker
+        %% Confirmación o cancelación del pedido según el pago
+        Broker -.->|6. Sub: PaymentAuthorized / PaymentFailed| OrderSvc
+        OrderSvc -.->|7. Pub: OrderConfirmed / OrderCancelled| Broker
+    end
+
+    subgraph "Microservicios Event-Driven"
+        Gateway -->|/auth| AuthSvc[auth-service]:::service
+        Gateway -->|/users| UserSvc[user-service]:::service
+        Gateway -->|/orders| OrderSvc
+        Gateway -->|/catalog| CatalogSvc[catalog-service <br/> CQRS / Read Model]:::readmodel
+        Gateway -->|/admin| AdminSvc[admin-service]:::service
+        Gateway -->|/storage| StorageSvc[storage-service]:::service
+
+        NotificationSvc[notification-service]:::service
+        %% Notificaciones: suscribe al resultado final y publica pedido de notificación
+        Broker -.->|8. Sub: OrderConfirmed / OrderCancelled| NotificationSvc
+        NotificationSvc -.->|9. Pub: NotificationRequested| Broker
+        %% Catálogo (Read Model) consume eventos de stock y producto para actualizar vistas de lectura
+        Broker -.->|10. Sub: StockUpdated / ProductUpdated| CatalogSvc[catalog-service <br/> CQRS / Read Model]:::readmodel
+    end
+
+    subgraph "Bases de Datos Independientes"
+        AuthSvc --- DB_Auth[(DB_Auth)]:::database
+        UserSvc --- DB_User[(DB_User)]:::database
+        OrderSvc --- DB_Order[(DB_Orders)]:::database
+        InventorySvc --- DB_Inv[(DB_Inventory)]:::database
+        PaymentSvc --- DB_Pay[(DB_Payments)]:::database
+        NotificationSvc --- DB_Notif[(DB_Notifications)]:::database
+        AdminSvc --- DB_Admin[(DB_Admin)]:::database
+        CatalogSvc --- DB_CatalogRM[(DB_Catalog <br/> Read Model)]:::database
+        StorageSvc --- DB_Storage[(DB_Storage)]:::database
+    end
+
+    PaymentSvc --"Circuit Breaker"--> ExtPayment[Proveedor Externo de Pagos]:::external
+    StorageSvc --"Circuit Breaker"--> ExtS3[Almacenamiento S3]:::external
