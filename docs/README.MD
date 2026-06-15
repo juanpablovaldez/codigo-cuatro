@@ -19,7 +19,7 @@ tags: [indice, tfi, documentacion]
 | [[07-microservicios-event-driven]] | Fase 2B — Microservicios Event-Driven | #7, #8 | ✅ Completo |
 | [[10-cache-alta-disponibilidad]] | Fase 3 — Caché y Alta Disponibilidad | #10 | ✅ Completo |
 | `11-read-replicas` | Fase 3 — Read Replicas | #11 | 🔄 Pendiente |
-| `12-balanceadores-autoscaling` | Fase 3 — Balanceadores y Auto-scaling | #12 | 🔄 Pendiente |
+| [[12-balanceadores-autoscaling]] | Fase 3 — Balanceadores y Auto-scaling | #12 | ✅ Completo |
 | `13-ambientes-devops` | Fase 4 — Ambientes, CI/CD, Kubernetes, Terraform | #13–#17 | 🔄 Pendiente |
 | `18-costos-infraestructura` | Fase 4 — Estimación de costos en la nube | #18 | 🔄 Pendiente |
 | `19-integracion-ia` | Fase 5 — Integración con IA (LLM / RAG) | #19, #20 | 🔄 Pendiente |
