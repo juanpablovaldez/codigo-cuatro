@@ -80,7 +80,7 @@ Un servicio de inventario aislado centraliza el control de concurrencia en un ú
 
 **Causa estructural:** El módulo de notificaciones vive en el mismo proceso que el de pedidos. La respuesta al cliente quedaba retenida hasta que se completara el envío del email. El usuario esperaba el resultado del email además de la confirmación del pedido.
 
-En la arquitectura de microservicios REST de esta fase, el `order-service` confirma el pedido y delega el procesamiento de notificaciones al `notification-service` mediante una llamada HTTP directa al finalizar el flujo crítico. Como mejora posterior (Fase 2B), ese paso puede modelarse de forma asíncrona mediante un message broker, eliminando por completo el impacto de las notificaciones sobre la latencia del checkout.
+En la arquitectura de microservicios REST de esta fase, el order-service confirma el pedido y delega el procesamiento de notificaciones al notification-service mediante una llamada HTTP separada, fuera de la transacción crítica del pedido.. Como mejora posterior (Fase 2B), ese paso puede modelarse de forma asíncrona mediante un message broker, eliminando por completo el impacto de las notificaciones sobre la latencia del checkout.
 
 ### 3.6 El equipo generaba conflictos frecuentes en el codebase único
 
