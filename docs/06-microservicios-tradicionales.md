@@ -1,3 +1,16 @@
+---
+title: "Fase 2A — Microservicios Tradicionales (REST Síncrono)"
+tags: [fase-2, microservicios, rest, api-gateway, circuit-breaker, nestjs]
+fase: 2
+paso: A
+issues: ["#5", "#6"]
+estado: completo
+relacionado:
+  - "[[02-arquitectura-inicial]]"
+  - "[[10-cache-alta-disponibilidad]]"
+  - "[[00-reporte-esqueleto]]"
+---
+
 # Fase 2 - Paso A: Arquitectura de Microservicios Tradicionales (REST Síncrono)
 
 ## 1. Contexto: por qué el monolito ya no alcanza
@@ -8,13 +21,14 @@ Sin embargo, el escenario de negocio cambió. La plataforma fue adoptada por com
 
 | Síntoma | Causa en el monolito |
 |---------|----------------------|
-| Lentitud en el checkout | El módulo de órdenes compite por recursos con el catálogo y las notificaciones |
-| Errores en stock | Actualizaciones concurrentes sobre la misma base de datos sin aislamiento |
-| Deploy riesgoso | Un cambio en notificaciones requiere redesplegar toda la API |
-| Equipo bloqueado | Cuatro desarrolladores editando los mismos archivos genera conflictos constantes |
-| Pagos frágiles | Un timeout del proveedor externo puede tumbar el hilo de la API entera |
+| Lentitud en el checkout | El módulo de órdenes compite por el mismo pool de conexiones a PostgreSQL que el catálogo |
+| Errores en stock (sobreventa) | Acceso concurrente no aislado: dos transacciones leen disponibilidad al mismo tiempo y ambas confirman |
+| Deploy genera downtime total | Cualquier cambio obliga a redesplegar toda la API, generando 15-40 segundos de indisponibilidad |
+| Equipo bloqueado | Seis desarrolladores sobre el mismo codebase generan conflictos frecuentes en archivos compartidos |
+| Pagos frágiles (propagación de fallos) | Un timeout del proveedor externo degrada toda la API por falta de aislamiento entre módulos |
+| Notificaciones inflaban la latencia del checkout | El email de confirmación se enviaba de forma síncrona dentro del mismo flujo del pedido, agregando ~1,6s |
 
-El escenario concreto que fuerza la migración es el siguiente: la plataforma alcanzó **500 comercios activos**, **15.000 clientes registrados** y picos de **800 pedidos por hora** durante fechas de alta demanda. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
+El escenario concreto que fuerza la migración es el siguiente: la plataforma creció a **487 comercios activos**, **14.300 clientes registrados**, **38.000 productos publicados** y picos de **820 pedidos por hora** con **1.400 usuarios concurrentes** (~210 RPS). Esto representa aproximadamente 30x más usuarios concurrentes y 80x más pedidos en hora pico respecto al diseño del MVP. El módulo de catálogo requiere muchas más lecturas que el de órdenes, pero al estar en el mismo proceso no se pueden escalar de forma independiente.
 
 Esta es la situación que justifica evolucionar hacia microservicios.
 
@@ -33,15 +47,15 @@ Para identificar los servicios se tomaron dos criterios:
 
 | Servicio | Dominio | Responsabilidades | Puerto interno |
 |----------|---------|-------------------|----------------|
-| `auth-service` | Autenticación | Registro, login, emisión y validación de JWT, refresh tokens | 3001 |
-| `user-service` | Usuarios y comercios | CRUD de clientes, vendedores, invitaciones, perfil, gestión de comercios | 3002 |
+| `auth-service` | Autenticación | Registro, login, emisión y validación de JWT, refresh tokens | 3008 |
+| `user-service` | Usuarios y comercios | CRUD de clientes, vendedores, invitaciones, perfil, gestión de comercios | 3009 |
 | `catalog-service` | Catálogo | Productos, categorías, búsqueda, FAQs, recursos de ayuda | 3003 |
 | `inventory-service` | Stock | Disponibilidad, reservas, descuentos de stock, alertas de bajo stock | 3004 |
 | `order-service` | Pedidos | Creación, ciclo de vida del pedido, historial, estados | 3005 |
 | `payment-service` | Pagos | Integración con proveedor externo, confirmación, reversión | 3006 |
 | `notification-service` | Notificaciones | Envío de emails y avisos por cambio de estado de pedidos y compras | 3007 |
-| `storage-service` | Almacenamiento | Upload de imágenes de productos y recursos, integración con S3 | 3008 |
-| `admin-service` | Administración | Supervisión de usuarios, comercios, pedidos y métricas de plataforma | 3009 |
+| `storage-service` | Almacenamiento | Upload de imágenes de productos y recursos, integración con S3 | 3010 |
+| `admin-service` | Administración | Supervisión de usuarios, comercios, pedidos y métricas de plataforma | 3011 |
 
 Cada servicio es una aplicación NestJS independiente con su propia base de datos PostgreSQL. No comparten esquemas ni conexiones.
 
@@ -70,7 +84,7 @@ Cada servicio es una aplicación NestJS independiente con su propia base de dato
           ▼                     ▼                     ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │  auth-service    │  │  user-service    │  │  catalog-service │
-│  :3001           │  │  :3002           │  │  :3003           │
+│  :3008           │  │  :3009           │  │  :3003           │
 │  JWT / Auth      │  │  Usuarios /      │  │  Productos /     │
 │                  │  │  Comercios       │  │  Categorías      │
 └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
@@ -98,7 +112,7 @@ Cada servicio es una aplicación NestJS independiente con su propia base de dato
           ▼                     ▼                     ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │notification-svc  │  │  storage-service │  │  admin-service   │
-│  :3007           │  │  :3008           │  │  :3009           │
+│  :3007           │  │  :3010           │  │  :3011           │
 │  Emails / Avisos │  │  S3 / Archivos   │  │  Panel admin     │
 └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
          │                     │                     │
@@ -254,6 +268,9 @@ Esta arquitectura resuelve el problema de escalado independiente, pero introduce
 
 Estas limitaciones son las que justifican evolucionar hacia una arquitectura event-driven en el **Paso B** de esta misma fase.
 
+> [!success] Paso B — Completo
+> La arquitectura Event-Driven con AWS SQS/SNS está documentada en [[07-microservicios-event-driven]]. Cubre CQRS, Saga por coreografía, Circuit Breaker en comunicación síncrona residual y consistencia eventual. Issue **#7** cerrado.
+
 ---
 
 ## 13. Conclusión
@@ -267,4 +284,4 @@ Los patrones clave aplicados en esta arquitectura son:
 - **Circuit Breaker** para proteger el flujo de checkout de fallos en cascada.
 - **Data snapshot** en `order_items` para evitar dependencias de lectura en tiempo real entre dominios.
 
-Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B.
+Sin embargo, la naturaleza síncrona de las llamadas introduce acoplamiento temporal entre servicios. Esa es la motivación para evolucionar hacia Event-Driven en el Paso B (ver issue #7).

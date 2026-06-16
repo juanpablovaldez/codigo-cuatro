@@ -1,21 +1,22 @@
-import express from 'express';
-import { BrokerClient } from './broker/broker.client';
-
-const app = express();
-const PORT = process.env.PORT || 3004;
-const broker = BrokerClient.getInstance();
-
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'UP', service: 'inventory-service', brokerConnected: true });
-});
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  await broker.connect('inventory-service');
-  app.listen(PORT, () => {
-    console.log(`Inventory Service is running on port ${PORT}`);
-  });
+  // Este servicio NO expone HTTP. Escucha mensajes TCP directamente.
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: '0.0.0.0',
+        port: Number(process.env.PORT) || 3004,
+      },
+    },
+  );
+
+  await app.listen();
+  console.log('[InventoryService] TCP microservice listening on port 3004');
 }
 
 bootstrap();
