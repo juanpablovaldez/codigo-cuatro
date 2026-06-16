@@ -1,0 +1,44 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-check:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project-path:
+          - 'gateway'
+          - 'services/admin-service'
+          - 'services/auth-service'
+          - 'services/catalog-service'
+          - 'services/inventory-service'
+          - 'services/notification-service'
+          - 'services/order-service'
+          - 'services/payment-service'
+          - 'services/storage-service'
+          - 'services/user-service'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ matrix.project-path }}/package.json'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{ matrix.project-path }}
+
+      - name: Compile NestJS app
+        run: npm run build
+        working-directory: ${{ matrix.project-path }}

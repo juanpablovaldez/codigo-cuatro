@@ -20,8 +20,8 @@ tags: [indice, tfi, documentacion]
 | [[10-cache-alta-disponibilidad]] | Fase 3 — Caché y Alta Disponibilidad | #10 | ✅ Completo |
 | `11-read-replicas` | Fase 3 — Read Replicas | #11 | 🔄 Pendiente |
 | [[12-balanceadores-autoscaling]] | Fase 3 — Balanceadores y Auto-scaling | #12 | ✅ Completo |
-| `13-ambientes-devops` | Fase 4 — Ambientes, CI/CD, Kubernetes, Terraform | #13–#17 | 🔄 Pendiente |
-| `18-costos-infraestructura` | Fase 4 — Estimación de costos en la nube | #18 | 🔄 Pendiente |
+| [[13-ambientes-devops]] | Fase 4 — Ambientes, CI/CD, Kubernetes, Costos | #13–#16, #18 | ✅ Completo |
+| [[17-infraestructura-como-codigo-terraform]] | Fase 4 — Infraestructura como Código con Terraform | #17 | ✅ Completo |
 | `19-integracion-ia` | Fase 5 — Integración con IA (LLM / RAG) | #19, #20 | 🔄 Pendiente |
 | [[00-reporte-esqueleto]] | Artefacto — Esqueleto de microservicios | #4, #9 | ✅ Completo |
 
@@ -34,8 +34,8 @@ tags: [indice, tfi, documentacion]
 | Fase 1 | Temática, modelo de negocio y arquitectura monolítica | ✅ Documentada |
 | Fase 2A | Microservicios tradicionales (REST síncrono) | ✅ Documentada |
 | Fase 2B | Microservicios modernos (event-driven con AWS SQS/SNS) | ✅ Documentada |
-| Fase 3 | Caché (Redis) documentada; read replicas y balanceadores pendientes | 🔄 Parcial |
-| Fase 4 | Infraestructura, DevOps, ambientes, IaC, costos | 🔄 Pendiente |
+| Fase 3 | Caché (Redis) y Balanceadores documentados; read replicas pendientes | 🔄 Parcial |
+| Fase 4 | DevOps, Ambientes, CI/CD, Kubernetes, IaC (Terraform) y Costos | ✅ Documentada |
 | Fase 5 | Integración con IA (LLM o RAG) | 🔄 Pendiente |
 
 ---
