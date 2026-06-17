@@ -1,0 +1,35 @@
+flowchart TD
+    subgraph Offline["Pipeline de ingesta offline"]
+        S1["Fuentes propias\nDocumentos, FAQs, catalogo,\nproductos, pedidos, soporte"]
+        S2["Extraccion\nDBs por servicio, S3,\nexports internos, eventos"]
+        S3["Limpieza y normalizacion\nHTML/Markdown, PII,\ncampos vacios, idioma"]
+        S4["Chunking\n600-900 tokens\n15-20% overlap"]
+        S5["Metadata\nsource, tenant_id, permisos,\nversion, timestamp"]
+        S6["Embeddings\ntext-embedding-3-small"]
+        S7["Vector DB\nPostgreSQL + pgvector"]
+        S8["Versionado y reindexacion\ncontent_hash, embedding_version,\nsource_version"]
+
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+    end
+
+    subgraph Online["Pipeline de consulta online"]
+        Q1["Usuario\nCliente, vendedor o admin"]
+        Q2["API Gateway\nAuth, rate limit,\ncorrelation_id"]
+        Q3["AI/RAG service\npendiente de #19"]
+        Q4["Embedding de query\nmismo modelo que ingesta"]
+        Q5["Busqueda vectorial\npgvector + filtros metadata"]
+        Q6["Top-k = 5\nthreshold >= 0.78"]
+        Q7{"Contexto relevante?"}
+        Q8["Prompt augmentado\ninstrucciones + contexto + pregunta"]
+        Q9["LLM externo\nintegracion definida en #19"]
+        Q10["Respuesta final\ncon fuentes y limites"]
+        Q11["Fallback\nsin contexto suficiente:\nno inventar, pedir reformulacion\no derivar a soporte"]
+        Q12["Auditoria\nquery, chunks, scores,\nmodelo, tenant, latencia"]
+
+        Q1 --> Q2 --> Q3 --> Q4 --> Q5 --> Q6 --> Q7
+        Q7 -->|Si| Q8 --> Q9 --> Q10 --> Q12
+        Q7 -->|No| Q11 --> Q12
+    end
+
+    S7 -.->|"recupera contexto"| Q5
+
