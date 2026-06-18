@@ -58,17 +58,31 @@ github.com/juanpablovaldez/codigo-cuatro
 - **Base de datos:** PostgreSQL 16
 - **Costo inicial:** ~$120-180/mes
 
+**Stack completo:**
+
+| Capa | Tecnología |
+|---|---|
+| Frontend (SPA) | React 19 + Vite · TanStack Router + Query · Zustand · shadcn/ui + Tailwind CSS |
+| Backend (API) | NestJS 11 · Controllers → Services → Prisma ORM |
+| Persistencia | PostgreSQL 16 (único) |
+| Infraestructura | Terraform + Amazon RDS + Amazon Cognito (identity) |
+
 **Por qué elegimos monolito al inicio:**
 
 | Criterio | Decisión |
 |---|---|
 | Escala objetivo (MVP) | < 500 clientes, 50 concurrentes → distribuir es overhead sin beneficio |
 | Velocidad de desarrollo | Un único deploy, sin latencia de red entre módulos |
-| Operaciones | Sin gestión de múltiples instancias ni message brokers |
+| Consistencia de datos | PostgreSQL único garantiza ACID en órdenes, pagos y stock concurrentes |
 | Límite explícito documentado | **A 100x de carga, el monolito falla** — sabíamos cuándo migramos |
 
 ```
 ┌────────────────────────────────────────────┐
+│         Frontend — React 19 + Vite         │
+│    TanStack Router/Query · Zustand · UI    │
+└─────────────────────┬──────────────────────┘
+                      │ HTTP/REST
+┌─────────────────────▼──────────────────────┐
 │              NestJS Monolito               │
 │  ┌─────────┐ ┌─────────┐ ┌─────────────┐  │
 │  │  Auth   │ │Catalog  │ │  Inventory  │  │
@@ -76,7 +90,7 @@ github.com/juanpablovaldez/codigo-cuatro
 │  ┌─────────┐ ┌─────────┐ ┌─────────────┐  │
 │  │ Orders  │ │Payments │ │Notifications│  │
 │  └─────────┘ └─────────┘ └─────────────┘  │
-│                    │                       │
+│              Prisma ORM                    │
 │           PostgreSQL 16 (compartido)       │
 └────────────────────────────────────────────┘
 ```
@@ -206,20 +220,31 @@ El cliente recibe `202 Accepted` en < 200ms. La confirmación llega por WebSocke
 **Cache (Redis)**
 - Cache-Aside: catálogo y perfiles de vendedor (TTL 5 min)
 - Write-Through: inventario (TTL 30s) — evita oversale
-- JWT validation nativa en Redis
+- JWT validation nativa en Redis — deslogout centralizado antes de expiración criptográfica
 - Rate limiting con `INCR` atómico — sin locks
+- **Invalidación activa por eventos:** cuando un vendedor actualiza un producto, `product.updated` dispara `DEL` explícito en Redis — no depende solo del TTL
 → **10-20x velocidad en lecturas frecuentes**
 
-**Réplicas de Lectura**
-- Primary solo para escrituras y transacciones críticas
-- Read replicas por dominio: catalog (×2), inventory (×1), order (×1)
-- Replication lag tolerado según dominio (catálogo: eventual ok; stock: mínimo)
+**Balanceo y Réplicas**
+- ALB (capa 7): terminación TLS + ruteo por path → `api-gateway`
+- ClusterIP (capa 4): balanceo inter-servicios sin overhead HTTP
+- **Round Robin** → `catalog-service` (costo computacional uniforme por petición)
+- **Least Connections** → `payment-service` (tiempos asimétricos por respuesta del proveedor externo)
+- Read replicas: catalog (×2), inventory (×1) — primary solo para escrituras críticas
 → **Lectura escalable sin tocar el primary**
 
-**Auto-scaling (HPA)**
-- ALB (capa 7) externo + Kubernetes Services (capa 4) interno
-- Escala out a 70% CPU, escala in a 30% (300s stabilization window)
-- Liveness probe: ¿el proceso responde? / Readiness probe: ¿está listo para tráfico?
+**Auto-scaling (HPA) — umbrales por servicio**
+
+| Servicio | Scale-out | Scale-in | Réplicas mín. | Razón |
+|---|---|---|---|---|
+| api-gateway | 70% | 30% | 2 | Entrada de todo el tráfico |
+| catalog-service | 70% | 30% | 3 | Máximo tráfico de lectura |
+| inventory-service | 75% | 35% | 2 | Tolerante a latencia breve |
+| order-service | 65% | 30% | 2 | Coordinador crítico |
+| payment-service | **60%** | **25%** | 2 | Alerta temprana — fallo impacta revenue |
+| auth-service | 70% | 30% | 2 | Requerido por toda petición |
+
+Liveness probe: ¿el proceso responde? / Readiness probe: ¿conexiones a PG y Redis establecidas?
 → **Elasticidad sin intervención manual**
 
 > **Notas del orador:** "El TTL de 30 segundos en inventario no es arbitrario: es el tiempo máximo tolerable de inconsistencia de stock antes de que el oversale sea un problema real para el negocio. Cada parámetro tiene su justificación."
@@ -322,9 +347,10 @@ feature/* → PR → develop ──auto──► QA (ECS mínimo)
 
 | Decisión | Elegido | Alternativa descartada | Justificación |
 |---|---|---|---|
+| **Pasarela de pagos** | **Shopify (delegado)** | Pasarela in-house | Construir pasarela propia exige certificar **PCI-DSS** — costo técnico y legal insostenible. Delegar libera al equipo para enfocarse en los diferenciadores reales |
 | Message broker cloud | AWS SQS/SNS | RabbitMQ · Kafka | Managed service nativo en AWS — sin ops de broker, IaC integrado, SLA garantizado |
 | Saga pattern | Coreografiada | Orquestada (conductor central) | Menos acoplamiento, sin Single Point of Failure en el coordinador |
-| Cache | Redis | Memcached | Operaciones atómicas (`INCR`), TTL granular por clave, pub/sub para invalidación |
+| Cache | Redis | Memcached | Operaciones atómicas (`INCR`), TTL granular por clave, invalidación activa por eventos |
 | IaC state | S3 + DynamoDB | Terraform Cloud | Control propio del estado, sin dependencia de vendor adicional |
 | Respuesta del checkout | Async (202 Accepted) | Sync (esperar confirmación) | < 200ms percibido vs. esperar toda la cadena; UX activo compensado con WebSocket |
 | Inicio con monolito | Monolito modular | Microservicios desde día 1 | Para < 500 clientes es overhead puro; evolución planificada más efectiva que distribución prematura |
@@ -340,6 +366,8 @@ feature/* → PR → develop ──auto──► QA (ECS mínimo)
 **Evolución completa:**
 Monolito → REST microservicios → Event-Driven → Cache + Réplicas + HPA → IaC + CI/CD → IA
 
+Cada paso respondió a necesidad de escala real — no a un capricho tecnológico (*Hype-Driven Development*).
+
 **Logros técnicos medibles:**
 
 | Métrica | Monolito | Arquitectura final |
@@ -351,9 +379,9 @@ Monolito → REST microservicios → Event-Driven → Cache + Réplicas + HPA �
 | Infraestructura | Click-ops | **100% reproducible desde código** |
 
 **¿Qué haría diferente con más tiempo?**
-- CQRS completo en más servicios (no solo catalog)
-- OpenTelemetry para trazabilidad distribuida end-to-end
-- Kafka en lugar de SQS/SNS para volúmenes superiores a 10M eventos/día
+- CQRS completo en más servicios (no solo catalog) — especialmente para inventarios multi-almacén
+- OpenTelemetry + **Jaeger** para trazabilidad distribuida end-to-end con latencia por milisegundo
+- Migrar a **Apache Kafka** cuando el throughput supere la capacidad de SQS/SNS — Event Log inmutable
 
 **¿Cuándo usar esta arquitectura?**
 A partir de ~500 usuarios concurrentes sostenidos, o cuando distintos dominios tienen carga muy desigual y necesitan escalar de forma independiente.
