@@ -759,12 +759,4 @@ La arquitectura actual (Fase 4 y 5) es robusta, pero previendo una hipotética h
 	- Commits de estructura inicial MVC
   ![[commits_estructura_inicial.png]]*Commits de migracion a Microservicios
 - ![[commits_migracion_microservicios.png]]
-- 
-- **Pipeline CI/CD**:
-- **Cobertura de Código (SonarQube/Jest):**
-  *(Placeholder: Insertar captura del reporte indicando >80% de coverage).*
-- **Infraestructura como Código:**
-  *(Placeholder: Insertar recorte terminal del output de `terraform apply` exitoso mostrando recursos creados).*
-- **Orquestación en Kubernetes:**
-  *(Placeholder: Insertar captura de consola ejecutando `kubectl get pods -n prod` evidenciando los despliegues y réplicas en ejecución).*
 	
